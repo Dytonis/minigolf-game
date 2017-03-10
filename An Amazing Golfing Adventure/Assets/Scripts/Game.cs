@@ -11,6 +11,14 @@ public class Game : MonoBehaviour
 
     public List<GameObject> HoleSpawns = new List<GameObject>();
 
+    public void Initialize()
+    {
+        foreach(GameObject p in Players)
+        {
+            p.transform.position = HoleSpawns[HoleNumber].transform.position;
+        }
+    }
+
 	public void NextHole()
     {
         print("test");

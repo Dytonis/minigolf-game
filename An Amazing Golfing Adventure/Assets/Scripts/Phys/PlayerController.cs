@@ -3,6 +3,8 @@ using System.Collections;
 
 public class PlayerController : MonoBehaviour
 {
+    public bool IsClientControlled = true;
+
     public GameObject PowerIndicator;
     public GameObject XIndicator;
     public CameraOrbit Orbiter;
@@ -16,6 +18,7 @@ public class PlayerController : MonoBehaviour
     public float PlayableSeconds;
     public float AirTime;
     public float AirTimeLastFrame;
+    public float StationaryUnplayableTime;
 
     public Vector3 LastPositionRTS;
 
@@ -27,6 +30,12 @@ public class PlayerController : MonoBehaviour
     public AudioSource BounceWood;
 
     public Game game;
+
+    void Start()
+    {
+        if(IsClientControlled)
+            game.Initialize();
+    }
 
     void Update()
     {
@@ -69,6 +78,7 @@ public class PlayerController : MonoBehaviour
 
         if (Playable)
         {
+            StationaryUnplayableTime = 0;
             PlayableSeconds += Time.deltaTime;
             if (PlayableSeconds >= 0.2)
             {
@@ -98,6 +108,16 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
+            if(IsStationary())
+            {
+                StationaryUnplayableTime += Time.deltaTime;
+                if(StationaryUnplayableTime >= 6f)
+                {
+                    ResetVelocityAndPosition();
+                    game.ResetPosition(gameObject, LastPositionRTS);
+                }
+            }
+
             PlayableSeconds = 0;
             GetComponent<MeshRenderer>().materials[0].SetColor("_OutlineColor", Color.black);
         }
@@ -130,12 +150,38 @@ public class PlayerController : MonoBehaviour
     {
         float magnitude = Vector3.Project(GetComponent<Rigidbody>().velocity, col.contacts[0].normal).sqrMagnitude;
 
+        RaycastHit hit;
+
+        string Tag;
+        int Layer;
+
+        if(IsNormalTo(col, out hit))
+        {
+            Tag = hit.collider.gameObject.tag;
+            Layer = hit.collider.gameObject.layer;
+        }
+        else if (IsGrounded(out hit))
+        {
+            Tag = hit.collider.gameObject.tag;
+            Layer = hit.collider.gameObject.layer;
+        }
+        else
+        {
+            Tag = col.collider.gameObject.tag;
+            Layer = col.collider.gameObject.layer;
+        }
+
         if(col.gameObject.layer == 9 && magnitude < 5f)
         {
             magnitude = 5f;
         }
 
-        if (col.collider.gameObject.tag == "Carpet")
+        if(magnitude < 1f)
+        {
+            magnitude = 1f;
+        }
+
+        if (Tag == "Carpet")
         {
             if (AirTimeLastFrame >= 0.1f)
             {
@@ -144,62 +190,57 @@ public class PlayerController : MonoBehaviour
                 BounceCarpet.Play();
             }
         }
-        if (col.collider.gameObject.tag == "Brick")
+        if (Tag == "Brick")
         {
             BounceBrick.pitch = Random.Range(0.9f, 1.1f);
             print(magnitude);
             BounceBrick.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
             BounceBrick.Play();
         }
-        if (col.collider.gameObject.tag == "Concrete")
+        if (Tag == "Concrete")
         {
             BounceConcrete.pitch = Random.Range(0.9f, 1.1f);
             BounceConcrete.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
             BounceConcrete.Play();           
         }
-        if (col.collider.gameObject.tag == "Concrete_Ramp")
+        if (Tag == "Concrete_Ramp")
         {
-            if (AirTimeLastFrame >= 0.1f)
-            {
-                BounceConcrete.pitch = Random.Range(0.9f, 1.1f);
-                BounceConcrete.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
-                BounceConcrete.Play();
-            }
+            BounceConcrete.pitch = Random.Range(0.9f, 1.1f);
+            BounceConcrete.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
+            BounceConcrete.Play();
+            
         }
-        if (col.collider.gameObject.tag == "Wood")
+        if (Tag == "Wood")
         {
             BounceWood.pitch = Random.Range(0.7f, 1.3f);
             BounceWood.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
             BounceWood.Play();
         }
-        if (col.collider.gameObject.tag == "Log")
+        if (Tag == "Log")
         {
             print(magnitude);
             BounceLog.pitch = Random.Range(0.6f, 1.4f);
             BounceLog.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
             BounceLog.Play();
         }
-        if (col.collider.gameObject.tag == "OoB")
+        if (Tag == "OoB")
         {
-            if(GetComponent<Rigidbody>().velocity.magnitude < 2)
+            if(GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
             {
                 ResetVelocityAndPosition();
                 game.ResetPosition(gameObject, LastPositionRTS);
             }
         }
-        else if (col.collider.gameObject.tag == "Untagged")
+        else if (Tag == "Untagged")
         {
-            if (AirTimeLastFrame >= 0.1f)
-            {
-                BounceConcrete.pitch = Random.Range(0.9f, 1.1f);
-                BounceConcrete.volume = Mathf.Clamp01(GetComponent<Rigidbody>().velocity.magnitude / SpeedSoundLimit);
-                BounceConcrete.Play();
-            }
+            BounceConcrete.pitch = Random.Range(0.9f, 1.1f);
+            BounceConcrete.volume = Mathf.Clamp01(GetComponent<Rigidbody>().velocity.magnitude / SpeedSoundLimit);
+            BounceConcrete.Play();         
         }
 
-        if(col.collider.gameObject.layer == 8) //reset layer
+        if(Layer == 8) //reset layer
         {
-            if (GetComponent<Rigidbody>().velocity.magnitude < 2)
+            if (GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
             {
                 ResetVelocityAndPosition();
                 game.ResetPosition(gameObject, LastPositionRTS);
@@ -234,9 +275,15 @@ public class PlayerController : MonoBehaviour
         GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
     }
 
+    bool IsNormalTo(Collision col, out RaycastHit hit)
+    {
+        Debug.DrawRay(transform.position, -col.contacts[0].normal, Color.blue, 10f);
+        return Physics.Raycast(new Ray(transform.position, -col.contacts[0].normal), out hit, 0.2f);
+    }
+
     bool IsStationary()
     {
-        return (GetComponent<Rigidbody>().velocity.magnitude == 0);
+        return (GetComponent<Rigidbody>().velocity.magnitude <= 0.01f);
     }
 
     bool IsGrounded()
