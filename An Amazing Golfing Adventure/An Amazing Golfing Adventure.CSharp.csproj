@@ -82,7 +82,10 @@
     <Compile Include="Assets\AQUAS\Scripts\AQUAS_Screenshotter.cs" />
     <Compile Include="Assets\AQUAS\Scripts\AQUAS_SmallBubbleBehaviour.cs" />
     <Compile Include="Assets\Options.cs" />
+    <Compile Include="Assets\Scene\Glen\GlenLoader.cs" />
+    <Compile Include="Assets\Scripts\Camera\CameraAdmin.cs" />
     <Compile Include="Assets\Scripts\Camera\CameraOrbit.cs" />
+    <Compile Include="Assets\Scripts\Camera\CameraSwivelSSO.cs" />
     <Compile Include="Assets\Scripts\DontGoThroughThings.cs" />
     <Compile Include="Assets\Scripts\Game.cs" />
     <Compile Include="Assets\Scripts\Mechanic\Pusher.cs" />
@@ -91,6 +94,7 @@
     <Compile Include="Assets\Scripts\Phys\PlayerController.cs" />
     <Compile Include="Assets\Scripts\SunRotator.cs" />
     <Compile Include="Assets\Scripts\TransformToObject.cs" />
+    <Compile Include="Assets\Scripts\UIButtonMainMenu.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\AQUAS\Readme.txt" />
