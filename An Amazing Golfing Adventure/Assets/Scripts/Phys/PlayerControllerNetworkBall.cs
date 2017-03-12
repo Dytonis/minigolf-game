@@ -2,18 +2,12 @@
 using System.Collections;
 using UnityEngine.Networking;
 
-public class PlayerController : NetworkBehaviour
+public class PlayerControllerNetworkBall : MonoBehaviour
 {
     public bool IsClientControlled = true;
 
-    public GameObject PowerIndicator;
-    public GameObject XIndicator;
-    public CameraOrbit Orbiter;
-    public float PowerLimit;
     public float SpeedSoundLimit;
     public float SpeedSoundDropLimit;
-
-    public float Power;
 
     public bool Playable;
     public float PlayableSeconds;
@@ -31,25 +25,10 @@ public class PlayerController : NetworkBehaviour
     public AudioSource BounceWood;
 
     public Game game;
+    public PlayerControllerNetwork network;
 
-    public override void OnStartClient()
-    {
-        base.OnStartClient();
-
-        if (isLocalPlayer)
-        {
-            IsClientControlled = true;
-            //game.CmdJoin(gameObject);
-        }
-    }
-   
     void Update()
     {
-        if(!IsClientControlled)
-        {
-            return;
-        }
-
         AirTimeLastFrame = AirTime;
         RaycastHit info;
         if (IsGrounded(out info))
@@ -82,11 +61,6 @@ public class PlayerController : NetworkBehaviour
             AirTime += Time.deltaTime;
         }
 
-        if (Input.GetMouseButton(0))
-        {
-            Orbiter.EnabledY = false;
-        }
-
         if (Playable)
         {
             StationaryUnplayableTime = 0;
@@ -95,34 +69,14 @@ public class PlayerController : NetworkBehaviour
             {
                 LastPositionRTS = transform.localPosition;
                 GetComponent<MeshRenderer>().materials[0].SetColor("_OutlineColor", Color.grey);
-
-                if (Input.GetMouseButton(0))
-                {
-                    PowerIndicator.SetActive(true);
-                    Power += Input.GetAxisRaw("Mouse Y");
-                    if (Power <= 0)
-                    {
-                        Power = 0;
-                    }
-                    if (Power >= PowerLimit)
-                    {
-                        Power = PowerLimit;
-                    }
-
-                    Orbiter.EnabledY = false;
-                }
-                else
-                {
-                    Orbiter.EnabledY = true;
-                }
             }
         }
         else
         {
-            if(IsStationary())
+            if (IsStationary())
             {
                 StationaryUnplayableTime += Time.deltaTime;
-                if(StationaryUnplayableTime >= 6f)
+                if (StationaryUnplayableTime >= 6f)
                 {
                     ResetVelocityAndPosition();
                     ResetPosition(gameObject, LastPositionRTS);
@@ -132,28 +86,28 @@ public class PlayerController : NetworkBehaviour
             PlayableSeconds = 0;
             GetComponent<MeshRenderer>().materials[0].SetColor("_OutlineColor", Color.black);
         }
-        if (Input.GetMouseButtonUp(0))
-        {
-            if(Power >= 0 && IsStationary())
-            {
-                GetComponent<Rigidbody>().AddForce(XIndicator.transform.forward * Mathf.Pow(3.6f * Power, 0.88f) * 10);
-                Power = 0;
-                PowerIndicator.SetActive(false);
-            }
-        }
-
-        PowerIndicator.transform.localScale = new Vector3(0.05f, 0.05f, Power / 40);
-        PowerIndicator.transform.rotation = XIndicator.transform.rotation;
-        PowerIndicator.transform.position = transform.position;
     }
 
     void OnTriggerEnter(Collider col)
     {
+        if(!network.isServer)
+        {
+            return;
+        }
+
         print(col.gameObject.tag);
         if (col.gameObject.tag == "Hole")
         {
-            ResetVelocityAndPosition();
+            //ResetVelocityAndPosition();
             //game.RpcNextHole();
+            if(network.isServer)
+            {
+                network.server.FinishedPlayersPerHole++;
+            }
+            else
+            {
+                network.CmdReadyPlayerHole();
+            }
         }
     }
 
@@ -171,7 +125,7 @@ public class PlayerController : NetworkBehaviour
         string Tag;
         int Layer;
 
-        if(IsNormalTo(col, out hit))
+        if (IsNormalTo(col, out hit))
         {
             Tag = hit.collider.gameObject.tag;
             Layer = hit.collider.gameObject.layer;
@@ -187,12 +141,12 @@ public class PlayerController : NetworkBehaviour
             Layer = col.collider.gameObject.layer;
         }
 
-        if(col.gameObject.layer == 9 && magnitude < 5f)
+        if (col.gameObject.layer == 9 && magnitude < 5f)
         {
             magnitude = 5f;
         }
 
-        if(magnitude < 1f)
+        if (magnitude < 1f)
         {
             magnitude = 1f;
         }
@@ -209,7 +163,6 @@ public class PlayerController : NetworkBehaviour
         if (Tag == "Brick")
         {
             BounceBrick.pitch = Random.Range(0.9f, 1.1f);
-            print(magnitude);
             BounceBrick.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
             BounceBrick.Play();
         }
@@ -217,14 +170,14 @@ public class PlayerController : NetworkBehaviour
         {
             BounceConcrete.pitch = Random.Range(0.9f, 1.1f);
             BounceConcrete.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
-            BounceConcrete.Play();           
+            BounceConcrete.Play();
         }
         if (Tag == "Concrete_Ramp")
         {
             BounceConcrete.pitch = Random.Range(0.9f, 1.1f);
             BounceConcrete.volume = Mathf.Clamp01(magnitude / SpeedSoundLimit);
             BounceConcrete.Play();
-            
+
         }
         if (Tag == "Wood")
         {
@@ -241,7 +194,7 @@ public class PlayerController : NetworkBehaviour
         }
         if (Tag == "OoB")
         {
-            if(GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
+            if (GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
             {
                 ResetVelocityAndPosition();
                 ResetPosition(gameObject, LastPositionRTS);
@@ -251,10 +204,10 @@ public class PlayerController : NetworkBehaviour
         {
             BounceConcrete.pitch = Random.Range(0.9f, 1.1f);
             BounceConcrete.volume = Mathf.Clamp01(GetComponent<Rigidbody>().velocity.magnitude / SpeedSoundLimit);
-            BounceConcrete.Play();         
+            BounceConcrete.Play();
         }
 
-        if(Layer == 8) //reset layer
+        if (Layer == 8) //reset layer
         {
             if (GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
             {
