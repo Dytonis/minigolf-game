@@ -27,7 +27,6 @@ public class PlayerControllerNetwork : NetworkBehaviour
     public void Awake()
     {
         server = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameServer>();
-        Scoreboard = GameObject.FindGameObjectWithTag("UIScoreboard").GetComponent<UIScoreboard>();
         ChildBall.network = this;
     }
 
@@ -42,6 +41,7 @@ public class PlayerControllerNetwork : NetworkBehaviour
     {
         if (isLocalPlayer)
         {
+            Scoreboard = GameObject.FindGameObjectWithTag("UIScoreboard").GetComponent<UIScoreboard>();
             XIndicator.SetActive(true);
             print("LOCALPLAYER");
             IsClientControlled = true;
@@ -265,11 +265,11 @@ public class PlayerControllerNetwork : NetworkBehaviour
 
         if(Input.GetKeyDown(KeyCode.Tab))
         {
-            Scoreboard.gameObject.SetActive(true);
+            Scoreboard.Toggle.gameObject.SetActive(true);
         }
         if (Input.GetKeyUp(KeyCode.Tab))
         {
-            Scoreboard.gameObject.SetActive(false);
+            Scoreboard.Toggle.gameObject.SetActive(false);
         }
 
         RaycastHit info;

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class UIScoreboard : MonoBehaviour
 {
-
+    public GameObject Toggle;
     public GameObject LinePrefab;
     public RectTransform TopObject;
     public RectTransform BottomObject;
@@ -33,7 +33,7 @@ public class UIScoreboard : MonoBehaviour
             GameObject line = Instantiate(LinePrefab) as GameObject;
             Lines.Add(line.GetComponent<UIScoreboardLine>());
             line.GetComponent<UIScoreboardLine>().Name.text = s;
-            line.transform.SetParent(transform);
+            line.transform.SetParent(Toggle.transform);
             line.transform.SetAsFirstSibling();
 
             if(index % 2 == 1)

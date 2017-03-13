@@ -90,6 +90,7 @@
     <Compile Include="Assets\Scripts\Game.cs" />
     <Compile Include="Assets\Scripts\GameServer.cs" />
     <Compile Include="Assets\Scripts\Mechanic\Pusher.cs" />
+    <Compile Include="Assets\Scripts\NetworkFixBall.cs" />
     <Compile Include="Assets\Scripts\Options.cs" />
     <Compile Include="Assets\Scripts\Phys\Brake.cs" />
     <Compile Include="Assets\Scripts\Phys\PlayerController.cs" />
