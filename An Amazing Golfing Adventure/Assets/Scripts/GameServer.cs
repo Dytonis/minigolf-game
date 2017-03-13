@@ -5,13 +5,19 @@ using System.Linq;
 
 public class GameServer : NetworkBehaviour
 {
+    public PlayerControllerNetwork LocalPlayer;
+
     public List<GameObject> PlayerList = new List<GameObject>();
+    public List<NamePacket> PlayerNamePackets = new List<NamePacket>();
 
     [SyncVar(hook = "FinishedPlayersChanged")]
     public int FinishedPlayersPerHole;
 
     [SyncVar]
     public int HoleNumber;
+
+    [SyncVar]
+    public bool GameStarted;
 
     public int HoleCount;
 
@@ -28,18 +34,20 @@ public class GameServer : NetworkBehaviour
 
         GeneratePlayerList();
 
-        if(FinishedPlayersPerHole >= PlayerList.Count)
+        if(change >= PlayerList.Count)
         {
-            foreach(GameObject p in PlayerList)
-            {
-                p.GetComponent<PlayerControllerNetwork>().TriggerNextHole();
-            }
+            LocalPlayer.GetComponent<PlayerControllerNetwork>().TriggerNextHole();            
         }
     }
 
     public void GeneratePlayerList()
     {
         PlayerList = GameObject.FindGameObjectsWithTag("Player").ToList();
+
+        foreach(GameObject obj in PlayerList)
+        {
+            PlayerNamePackets.Add(new NamePacket() { id = obj.GetComponent<NetworkIdentity>().netId.Value, name = obj.name });
+        }
     }
 
     public void Starta()
@@ -61,4 +69,10 @@ public class GameServer : NetworkBehaviour
     {
         player.transform.localPosition = LRTS;
     }
+}
+
+public struct NamePacket
+{
+    public string name;
+    public uint id;
 }

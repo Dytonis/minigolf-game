@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.Networking;
 using System.Linq;
 
@@ -22,11 +22,20 @@ public class PlayerControllerNetwork : NetworkBehaviour
     public Vector3 LastPositionRTS;
 
     public GameServer server;
+    public UIScoreboard Scoreboard;
 
     public void Awake()
     {
         server = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameServer>();
+        Scoreboard = GameObject.FindGameObjectWithTag("UIScoreboard").GetComponent<UIScoreboard>();
         ChildBall.network = this;
+    }
+
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+
+        gameObject.name = gameObject.GetInstanceID().ToString();
     }
 
     public override void OnStartLocalPlayer()
@@ -39,7 +48,36 @@ public class PlayerControllerNetwork : NetworkBehaviour
             ChildBall.IsClientControlled = true;
             //ChildBall.game = game;
             CmdJoin(gameObject);
+            server.LocalPlayer = this;
+            server.GeneratePlayerList();
+
+            GameObject.FindGameObjectWithTag("SceneCamera").SetActive(false);
+
+            List<string> playerNames = new List<string>();
+
+            foreach(GameObject obj in server.PlayerList)
+            {
+                playerNames.Add(obj.name);
+            }
+
+            Scoreboard.Initialize(playerNames.ToArray());
+            //Scoreboard.Initialize(new string[] { "test1", "test2", "test3" });
         }
+    }
+
+    public void UpdateScoreboardPlayerlist()
+    {
+        server.GeneratePlayerList();
+
+        List<string> playerNames = new List<string>();
+
+        foreach (GameObject obj in server.PlayerList)
+        {
+            playerNames.Add(obj.name);
+        }
+
+        Scoreboard.UpdatePlayers(playerNames.ToArray());
+        //Scoreboard.UpdatePlayers(new string[] { "test1", "test2", "test3" });
     }
 
     [Command]
@@ -63,35 +101,121 @@ public class PlayerControllerNetwork : NetworkBehaviour
 
         server.GeneratePlayerList();
 
+        RpcGotPlayerConnection(player.name, server.PlayerNamePackets.ToArray());
+
         print("server players " + server.PlayerCount);
 
         if (server.PlayerCount >= server.ExpectingPlayers)
         {
+            server.HoleNumber = 1;
             //Send move all command to all clients' new connecting object
-            RpcNextHole();
+
+            if (!server.GameStarted)
+            {
+                server.GameStarted = true;
+                RpcMoveAllToHole(1); //move all players to new hole
+            }
+            else
+            {
+                //game already started
+                RpcSpawnCurrentHole(); //move current player to current hole
+            }
         }
     }
 
     public void TriggerNextHole()
     {
+        //ran on server!
         if(!isServer)
         {
             return;
         }
 
         //server authority
+        server.FinishedPlayersPerHole = 0;
 
-        RpcNextHole();
+        if (server.HoleNumber < server.HoleSpawns.Count - 1)
+        {
+            server.HoleNumber++;
+            RpcMoveAllToHole(server.HoleNumber);
+        }
+        else
+            RpcSpawnAllCurrentHole();
+    }
+
+    [Command]
+    public void CmdUpdateScore(string playerName, int hole, int score)
+    {
+        //server send command to clients
+        RpcGotUpdatedScore(playerName, hole, score);
     }
 
     [ClientRpc]
-    public void RpcNextHole()
+    public void RpcGotUpdatedScore(string playerName, int hole, int score)
+    {
+        //server has told us to update the score. the args are the updated data
+        //this will not be our local player - this is the player who recently holed. we need to get our player
+
+    }
+
+    [ClientRpc]
+    public void RpcGotPlayerConnection(string playerName, NamePacket[] otherPlayersProvided)
+    {
+        try
+        {
+            print("CLIENT Recieve Command: RpcGotPlayerConnection " + playerName + ", " + otherPlayersProvided[0] + " " + otherPlayersProvided[1]);
+        }
+        catch { }
+        //this is ran on the connecting player - we have to get the local player.
+        gameObject.name = playerName;
+
+        server.GeneratePlayerList();
+        
+        //assign names to the matching objects recieved from the server.
+        foreach(GameObject obj in server.PlayerList)
+        {
+            foreach(NamePacket packet in otherPlayersProvided)
+            {
+                if(obj.GetComponent<NetworkIdentity>().netId.Value == packet.id)
+                {
+                    obj.name = packet.name;
+                }
+            }
+        }
+
+        server.LocalPlayer.UpdateScoreboardPlayerlist();
+    }
+
+    [ClientRpc]
+    public void RpcMoveAllToHole(int holeNumber)
+    {
+        print("CLIENT Recieve Command: RpcNextHole");
+
+        server.FinishedPlayersPerHole = 0;
+        server.GeneratePlayerList();
+        print(server.PlayerList);
+        foreach (GameObject p in server.PlayerList)
+        {
+            print("moving player " + p.transform.GetInstanceID());
+            //move all objects for client
+            p.transform.position = server.HoleSpawns[holeNumber].transform.position;
+
+            PlayerControllerNetwork pN = p.GetComponent<PlayerControllerNetwork>();
+
+            pN.ChildBall.transform.localPosition = Vector3.zero;
+            pN.ChildBall.GetComponent<Rigidbody>().velocity = Vector3.zero;
+            pN.ChildBall.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        }
+    }
+
+    [ClientRpc]
+    public void RpcSpawnAllCurrentHole()
     {
         print("CLIENT Recieve Command: RpcNextHole");
         print(gameObject.GetInstanceID());
 
-        print(server.HoleSpawns.Count + " > " + (server.HoleNumber + 1));
-        if (server.HoleSpawns.Count > (server.HoleNumber + 1))
+        print(server.HoleSpawns.Count + " > " + (server.HoleNumber));
+        if (server.HoleSpawns.Count > (server.HoleNumber))
         {
             server.GeneratePlayerList();
             print(server.PlayerList);
@@ -99,7 +223,7 @@ public class PlayerControllerNetwork : NetworkBehaviour
             {
                 print("moving player " + p.transform.GetInstanceID());
                 //move all objects for client
-                p.transform.position = server.HoleSpawns[server.HoleNumber + 1].transform.position;
+                p.transform.position = server.HoleSpawns[server.HoleNumber].transform.position;
 
                 PlayerControllerNetwork pN = p.GetComponent<PlayerControllerNetwork>();
 
@@ -107,8 +231,28 @@ public class PlayerControllerNetwork : NetworkBehaviour
                 pN.ChildBall.GetComponent<Rigidbody>().velocity = Vector3.zero;
                 pN.ChildBall.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
             }
+        }
+    }
 
-            server.HoleNumber++;
+    [ClientRpc]
+    public void RpcSpawnCurrentHole()
+    {
+        print("CLIENT Recieve Command: RpcNextHole");
+
+        print(server.HoleSpawns.Count + " > " + (server.HoleNumber));
+        if (server.HoleSpawns.Count > (server.HoleNumber))
+        {
+            server.GeneratePlayerList();
+            print(server.PlayerList);
+
+            print("moving player " + gameObject.name);
+            //move all objects for client
+            transform.position = server.HoleSpawns[server.HoleNumber].transform.position;
+
+            ChildBall.transform.localPosition = Vector3.zero;
+            ChildBall.GetComponent<Rigidbody>().velocity = Vector3.zero;
+            ChildBall.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+           
         }
     }
 
@@ -117,6 +261,15 @@ public class PlayerControllerNetwork : NetworkBehaviour
         if(!IsClientControlled)
         {
             return;
+        }
+
+        if(Input.GetKeyDown(KeyCode.Tab))
+        {
+            Scoreboard.gameObject.SetActive(true);
+        }
+        if (Input.GetKeyUp(KeyCode.Tab))
+        {
+            Scoreboard.gameObject.SetActive(false);
         }
 
         RaycastHit info;
