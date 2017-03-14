@@ -90,8 +90,11 @@
     <Compile Include="Assets\Scripts\Game.cs" />
     <Compile Include="Assets\Scripts\GameServer.cs" />
     <Compile Include="Assets\Scripts\Mechanic\Pusher.cs" />
+    <Compile Include="Assets\Scripts\Net\LobbyPlayer.cs" />
     <Compile Include="Assets\Scripts\Net\NetworkLobby.cs" />
+    <Compile Include="Assets\Scripts\Net\NetworkPackets.cs" />
     <Compile Include="Assets\Scripts\NetworkFixBall.cs" />
+    <Compile Include="Assets\Scripts\NonNetworkingPackets.cs" />
     <Compile Include="Assets\Scripts\Options.cs" />
     <Compile Include="Assets\Scripts\Phys\Brake.cs" />
     <Compile Include="Assets\Scripts\Phys\PlayerController.cs" />
@@ -101,6 +104,7 @@
     <Compile Include="Assets\Scripts\TransformToObject.cs" />
     <Compile Include="Assets\Scripts\UI\UIScoreboard.cs" />
     <Compile Include="Assets\Scripts\UI\UIScoreboardLine.cs" />
+    <Compile Include="Assets\Scripts\UI\UIScreens.cs" />
     <Compile Include="Assets\Scripts\UIButtonMainMenu.cs" />
   </ItemGroup>
   <ItemGroup>

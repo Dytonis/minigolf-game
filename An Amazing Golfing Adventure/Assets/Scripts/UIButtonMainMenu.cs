@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -17,19 +18,22 @@ public class UIButtonMainMenu : MonoBehaviour
 
     public Buttons button;
 
+    private UIScreens ScreensManager;
+
     // Use this for initialization
     void Start ()
     {
         rect = GetComponent<RectTransform>();
         text = GetComponent<Text>();
         originalPosition = rect.anchoredPosition;
-        print(rect.anchoredPosition);
+
+        ScreensManager = transform.parent.parent.GetComponent<UIScreens>();
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
-	
+	    
 	}
 
     public void StartHover()
@@ -53,6 +57,44 @@ public class UIButtonMainMenu : MonoBehaviour
         if(button == Buttons.Singleplayer)
         {
             SceneManager.LoadScene("LoadingGlen");
+        }
+        else if (button == Buttons.Multiplayer)
+        {
+            ScreensManager.SwitchScreen(3);
+        }
+        else if (button == Buttons.HostAGame)
+        {
+            ScreensManager.SwitchScreen(5);
+        }
+        else if (button == Buttons.JoinAGame)
+        {
+            ScreensManager.SwitchScreen(1);
+        }
+        else if (button == Buttons.BackToMain)
+        {
+            ScreensManager.SwitchScreen(0);
+        }
+        else if (button == Buttons.BackToHJ)
+        {
+            ScreensManager.SwitchScreen(3);
+        }
+        else if (button == Buttons.CreateLobby)
+        {
+            ScreensManager.Lobby.SetScreens(ScreensManager);
+
+            ScreensManager.Lobby.NLStartAsHost();
+        }
+        else if (button == Buttons.Connect)
+        {
+            ScreensManager.Lobby.SetScreens(ScreensManager);
+
+            ScreensManager.SwitchScreen(2);
+
+            ScreensManager.Lobby.NLConnect();
+        }
+        else if (button == Buttons.StartGame)
+        {
+            GameObject.FindGameObjectWithTag("PlayerLocal").GetComponent<LobbyPlayer>().HandleLevelChange();
         }
     }
 
@@ -87,6 +129,16 @@ public class UIButtonMainMenu : MonoBehaviour
         Singleplayer,
         Multiplayer,
         Options,
-        Quit
+        Quit,
+        BackToMain,
+        BackToHJ,
+        HostAGame,
+        JoinAGame,
+        Connect,
+        StartGame,
+        MapButtonLeft,
+        MapButtonRight,
+        ShowScorecard,
+        CreateLobby
     }
 }
