@@ -12,6 +12,9 @@ public class UIButtonMainMenu : MonoBehaviour
     public Vector3 offset;
     public float Speed;
 
+    public bool AnimateMovement = true;
+    public bool AnimateColor = true;
+
     public Buttons button;
 
     // Use this for initialization
@@ -31,8 +34,11 @@ public class UIButtonMainMenu : MonoBehaviour
 
     public void StartHover()
     {
-        StartCoroutine(SmoothMove(originalPosition, add(rect.anchoredPosition, offset), Speed));
-        StartCoroutine(SmoothColor(Color.white, Color.yellow, Speed));
+        if(AnimateMovement)
+            StartCoroutine(SmoothMove(originalPosition, add(rect.anchoredPosition, offset), Speed));
+
+        if(AnimateColor)
+            StartCoroutine(SmoothColor(Color.white, Color.yellow, Speed));
     }
 
     public void EndHover()
