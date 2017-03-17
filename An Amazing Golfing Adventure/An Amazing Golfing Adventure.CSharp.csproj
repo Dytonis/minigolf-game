@@ -100,6 +100,7 @@
     <Compile Include="Assets\Scripts\Phys\PlayerController.cs" />
     <Compile Include="Assets\Scripts\Phys\PlayerControllerNetwork.cs" />
     <Compile Include="Assets\Scripts\Phys\PlayerControllerNetworkBall.cs" />
+    <Compile Include="Assets\Scripts\PlayerRoot.cs" />
     <Compile Include="Assets\Scripts\SunRotator.cs" />
     <Compile Include="Assets\Scripts\TransformToObject.cs" />
     <Compile Include="Assets\Scripts\UI\UIScoreboard.cs" />

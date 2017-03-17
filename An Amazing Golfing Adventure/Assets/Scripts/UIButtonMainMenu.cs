@@ -56,6 +56,7 @@ public class UIButtonMainMenu : MonoBehaviour
     {
         if(button == Buttons.Singleplayer)
         {
+            ScreensManager.Lobby.NLStartSingleplayer();
             SceneManager.LoadScene("LoadingGlen");
         }
         else if (button == Buttons.Multiplayer)
@@ -94,7 +95,7 @@ public class UIButtonMainMenu : MonoBehaviour
         }
         else if (button == Buttons.StartGame)
         {
-            GameObject.FindGameObjectWithTag("PlayerLocal").GetComponent<LobbyPlayer>().HandleLevelChange();
+            ScreensManager.Lobby.LocalPlayer.HandleLevelChange();
         }
     }
 

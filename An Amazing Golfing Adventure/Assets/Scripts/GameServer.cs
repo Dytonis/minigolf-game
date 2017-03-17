@@ -5,11 +5,6 @@ using System.Linq;
 
 public class GameServer : NetworkBehaviour
 {
-    public PlayerControllerNetwork LocalPlayer;
-
-    public List<GameObject> PlayerList = new List<GameObject>();
-    public List<NamePacket> PlayerNamePackets = new List<NamePacket>();
-
     [SyncVar(hook = "FinishedPlayersChanged")]
     public int FinishedPlayersPerHole;
 
@@ -28,25 +23,15 @@ public class GameServer : NetworkBehaviour
 
     public int ExpectingPlayers;
 
+    public NetworkLobby lobby;
+
     public void FinishedPlayersChanged(int change)
     {
         FinishedPlayersPerHole = change;
 
-        GeneratePlayerList();
-
-        if(change >= PlayerList.Count)
+        if(change >= lobby.PlayerList.Count)
         {
-            LocalPlayer.GetComponent<PlayerControllerNetwork>().TriggerNextHole();            
-        }
-    }
-
-    public void GeneratePlayerList()
-    {
-        PlayerList = GameObject.FindGameObjectsWithTag("Player").ToList();
-
-        foreach(GameObject obj in PlayerList)
-        {
-            PlayerNamePackets.Add(new NamePacket() { id = obj.GetComponent<NetworkIdentity>().netId.Value, name = obj.name });
+            //lobby.LocalPlayer.GetComponent<PlayerControllerNetwork>().TriggerNextHole();            
         }
     }
 
@@ -56,6 +41,16 @@ public class GameServer : NetworkBehaviour
         {
             HoleSpawns.Add(GameObject.FindGameObjectWithTag("Spawn" + i));
         }
+    }
+
+    public void Start()
+    {
+        lobby = GameObject.FindGameObjectWithTag("NetworkManager").GetComponent<NetworkLobby>();
+
+        print("awake gameserver");
+
+        lobby.gameManager = this;
+        lobby.LocalPlayer.LocalGameStartedInit();
     }
 
     [ClientRpc]

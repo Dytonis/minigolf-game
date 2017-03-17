@@ -4,14 +4,21 @@ using System.Collections.Generic;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using JAMGG.Net;
+using System.Collections;
 
 public class LobbyPlayer : NetworkBehaviour
 {
     public NetworkLobby lobby;
     [SerializeField, SyncVar]
-    public PlayerMetadata meta;
+    public PlayerMetadata meta; //will be the same for every client. server must assign this
 
     private int spawnMultiplayerBallQueue = 0;
+
+    public PlayerController ControlledBall;
+
+    public bool Ready = false;
+
+    public bool isPlayer;
 
     public void Awake()
     {
@@ -20,11 +27,42 @@ public class LobbyPlayer : NetworkBehaviour
         DontDestroyOnLoad(transform);
     }
 
+    public void LocalGameStartedInit()
+    {
+        //called when GameServer starts the game on the local player's ball (locally, use OfficialGameStartedInit for when the multiplayer match begins)
+
+        print("start co from " + meta.name + " gm: " + lobby.gameManager);
+
+        lobby.GeneratePlayerList();
+
+        foreach(LobbyPlayer p in lobby.PlayerList)
+        {
+            p.ControlledBall = (Instantiate(lobby.BallPlayerPrefab) as GameObject).GetComponent<PlayerRoot>().ball;
+        }
+
+        StartCoroutine(WaitToReady());
+    }
+
+    IEnumerator WaitToReady()
+    {
+        yield return new WaitForSeconds(2.5f);
+
+        if (!isPlayer)
+            ControlledBall.XIndicator.SetActive(false);
+
+        GameObject cam = GameObject.FindGameObjectWithTag("SceneCamera");
+        print(cam + " from " + meta.name);
+        cam.SetActive(false);
+        CmdPlayerSetReady(true);
+    }
+
     public override void OnStartLocalPlayer()
     { 
         print("local player start");
 
         lobby.LocalPlayer = this;
+
+        isPlayer = true;
 
         CmdPlayerJoined(meta);
     }
@@ -58,14 +96,15 @@ public class LobbyPlayer : NetworkBehaviour
     {
         if(isServer)
         {
-            RpcChangeLevel();
+            //NetworkServer.SetAllClientsNotReady();
+            lobby.NLChangeLevel("LoadingGlen");
         }
         else
         {
             CmdPrintServer("Non-server start game attempt blocked.");
         }
     }
-    
+
     [Command]
     public void CmdPlayerJoined(JAMGG.Net.PlayerMetadata connect)
     {
@@ -83,7 +122,7 @@ public class LobbyPlayer : NetworkBehaviour
             }
         };
 
-        RpcRecievePlayerConnection(connect, packet);
+        lobby.LocalPlayer.RpcRecievePlayerConnection(connect, packet);
     }
 
     [Command]
@@ -92,9 +131,26 @@ public class LobbyPlayer : NetworkBehaviour
         print(data);
     }
 
-    [ClientRpc]
+    [Command]
+    public void CmdPlayerSetReady(bool ready)
+    {
+        Ready = ready;
+
+        foreach(LobbyPlayer p in lobby.PlayerList)
+        {
+            if (p.Ready == false)
+                return;
+        }
+
+        RpcOfficialGameStartedInit();
+    }
+
+    [ClientRpc, System.Obsolete]
     public void RpcChangeLevel()
     {
+        //tell the serve we are not ready
+        //CmdSetReadyState()
+
         SceneManager.LoadScene("LoadingGlen");
     }
 
@@ -102,6 +158,9 @@ public class LobbyPlayer : NetworkBehaviour
     public void RpcRecievePlayerConnection(JAMGG.Net.PlayerMetadata connect, JAMGG.Net.LobbyConnectionPacket lobbyInfo)
     {
         transform.name = connect.name;
+
+        if (!lobby.Networked) //return if singleplayer
+            return;
 
         if (!isLocalPlayer)
         {
@@ -126,12 +185,8 @@ public class LobbyPlayer : NetworkBehaviour
             lobby.Screens.MapName.text = lobbyInfo.LobbyInfo.MapSelected;
             lobby.Screens.Playernames.text = "";
 
-            print("lobby hook " + lobbyInfo.LobbyInfo.LobbyName);
-
             foreach (PlayerMetadata m in lobbyInfo.OtherMetadatas)
             {
-                print("metadata hook " + m.name);
-
                 lobby.Screens.Playernames.text += m.name + "\n";
 
                 if (m.ID == meta.ID)
@@ -139,6 +194,28 @@ public class LobbyPlayer : NetworkBehaviour
 
                 lobby.LocalPlayer.spawnMultiplayerBallQueue++;
             }
+        }
+    }
+
+    [ClientRpc]
+    public void RpcOfficialGameStartedInit()
+    {
+        //called on host's ball!
+
+        print("CLIENT + " + meta.name + " Recieve Command: RpcNextHole");
+        print(lobby.gameManager);
+
+        lobby.gameManager.FinishedPlayersPerHole = 0;
+        foreach (LobbyPlayer p in lobby.PlayerList)
+        {
+            print("moving player " + p.transform.GetInstanceID());
+            //move all objects for client
+            p.ControlledBall.transform.parent.position = lobby.gameManager.HoleSpawns[1].transform.position;
+
+
+            p.ControlledBall.transform.localPosition = Vector3.zero;
+            p.ControlledBall.GetComponent<Rigidbody>().velocity = Vector3.zero;
+            p.ControlledBall.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
         }
     }
 }

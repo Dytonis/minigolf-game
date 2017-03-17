@@ -2,7 +2,7 @@
 using System.Collections;
 using UnityEngine.Networking;
 
-public class PlayerController : NetworkBehaviour
+public class PlayerController : MonoBehaviour
 {
     public bool IsClientControlled = true;
 
@@ -32,15 +32,9 @@ public class PlayerController : NetworkBehaviour
 
     public Game game;
 
-    public override void OnStartClient()
+    void Start()
     {
-        base.OnStartClient();
-
-        if (isLocalPlayer)
-        {
-            IsClientControlled = true;
-            //game.CmdJoin(gameObject);
-        }
+        IsClientControlled = true;
     }
    
     void Update()

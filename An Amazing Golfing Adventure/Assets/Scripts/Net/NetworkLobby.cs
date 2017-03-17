@@ -12,6 +12,7 @@ public class NetworkLobby : NetworkManager
     public Text PortConnectText;
     public Text PortStartText;
 
+    public GameObject BallPlayerPrefab;
     public GameObject BasketBallPrefab;
     public GameObject BasketBallSpawn;
     public GameObject PlayerLobby;
@@ -23,9 +24,25 @@ public class NetworkLobby : NetworkManager
     [HideInInspector]
     public UIScreens Screens;
 
+    public bool Networked = true;
+
+    public GameServer gameManager;
+
+    public void NLChangeLevel(string level)
+    {
+        ServerChangeScene(level);
+    }
+
     public void NLStartAsHost()
     {
         SetStartPort();
+        singleton.StartHost();
+    }
+
+    public void NLStartSingleplayer()
+    {
+        Networked = false;
+        singleton.networkPort = 7777;
         singleton.StartHost();
     }
 
@@ -78,7 +95,8 @@ public class NetworkLobby : NetworkManager
     {
         base.OnClientConnect(conn);
 
-        Screens.SwitchScreen(4);
+        if(Networked)
+            Screens.SwitchScreen(4);
     }
 
     public void SetScreens(UIScreens screens)
@@ -101,10 +119,10 @@ public class NetworkLobby : NetworkManager
         }
     }
 
-    public override void OnClientDisconnect(NetworkConnection conn)
+    public override void OnServerDisconnect(NetworkConnection conn)
     {
-        base.OnClientDisconnect(conn);
+        base.OnServerDisconnect(conn);
 
-
+        print("server disconnect client " + conn.address);
     }
 }
