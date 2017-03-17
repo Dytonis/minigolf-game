@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.Networking;
 using UnityEngine.UI;
 using System;
-using UnityEngine.SceneManagement;
+using System.Linq;
 
 public class NetworkLobby : NetworkManager
 {
@@ -20,7 +20,8 @@ public class NetworkLobby : NetworkManager
 
     public LobbyPlayer LocalPlayer;
 
-    private UIScreens Screens;
+    [HideInInspector]
+    public UIScreens Screens;
 
     public void NLStartAsHost()
     {
@@ -83,5 +84,27 @@ public class NetworkLobby : NetworkManager
     public void SetScreens(UIScreens screens)
     {
         this.Screens = screens;
+    }
+
+    public void GeneratePlayerList()
+    {
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+        PlayerList = players.Select(x => x.GetComponent<LobbyPlayer>()).ToList();
+        //FixPlayerMetadataToObjects();
+    }
+
+    public void FixPlayerMetadataToObjects()
+    {
+        foreach(LobbyPlayer p in PlayerList)
+        {
+            p.gameObject.name = p.meta.name;
+        }
+    }
+
+    public override void OnClientDisconnect(NetworkConnection conn)
+    {
+        base.OnClientDisconnect(conn);
+
+
     }
 }

@@ -22,9 +22,10 @@ namespace JAMGG.Net
         public string MapSelected;
     }
 
+    [Serializable]
     public struct PlayerMetadata
     {
-        public int netID;
+        public int ID;
         public string name;
         //skins stuff
     }
