@@ -93,6 +93,7 @@
     <Compile Include="Assets\Scripts\Net\LobbyPlayer.cs" />
     <Compile Include="Assets\Scripts\Net\NetworkLobby.cs" />
     <Compile Include="Assets\Scripts\Net\NetworkPackets.cs" />
+    <Compile Include="Assets\Scripts\Net\NetworkSync.cs" />
     <Compile Include="Assets\Scripts\NetworkFixBall.cs" />
     <Compile Include="Assets\Scripts\NonNetworkingPackets.cs" />
     <Compile Include="Assets\Scripts\Options.cs" />

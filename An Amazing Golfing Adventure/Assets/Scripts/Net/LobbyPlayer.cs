@@ -9,6 +9,7 @@ using System.Collections;
 public class LobbyPlayer : NetworkBehaviour
 {
     public NetworkLobby lobby;
+    public NetworkSync sync;
     [SerializeField, SyncVar]
     public PlayerMetadata meta; //will be the same for every client. server must assign this
 
@@ -20,10 +21,12 @@ public class LobbyPlayer : NetworkBehaviour
 
     public bool isPlayer;
 
+
     public void Awake()
     {
         lobby = GameObject.FindGameObjectWithTag("NetworkManager").GetComponent<NetworkLobby>();
         meta = new JAMGG.Net.PlayerMetadata { name = "Lobby Player " + transform.GetInstanceID().ToString(), ID = this.GetInstanceID() };
+        sync = GetComponent<NetworkSync>();
         DontDestroyOnLoad(transform);
     }
 
@@ -38,7 +41,11 @@ public class LobbyPlayer : NetworkBehaviour
         foreach(LobbyPlayer p in lobby.PlayerList)
         {
             p.ControlledBall = (Instantiate(lobby.BallPlayerPrefab) as GameObject).GetComponent<PlayerRoot>().ball;
+            p.GetComponent<NetworkSync>().SetupSync(p.ControlledBall.GetComponent<Rigidbody>(), p.ControlledBall.transform.parent.GetComponent<PlayerRoot>());
+            p.ControlledBall.Master = p;
         }
+
+        ControlledBall.IsClientControlled = true;
 
         StartCoroutine(WaitToReady());
     }
@@ -46,9 +53,6 @@ public class LobbyPlayer : NetworkBehaviour
     IEnumerator WaitToReady()
     {
         yield return new WaitForSeconds(2.5f);
-
-        if (!isPlayer)
-            ControlledBall.XIndicator.SetActive(false);
 
         GameObject cam = GameObject.FindGameObjectWithTag("SceneCamera");
         print(cam + " from " + meta.name);

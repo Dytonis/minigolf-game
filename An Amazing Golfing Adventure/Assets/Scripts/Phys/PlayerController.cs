@@ -4,6 +4,7 @@ using UnityEngine.Networking;
 
 public class PlayerController : MonoBehaviour
 {
+    public LobbyPlayer Master;
     public bool IsClientControlled = true;
 
     public GameObject PowerIndicator;
@@ -34,13 +35,14 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        IsClientControlled = true;
+
     }
    
     void Update()
     {
         if(!IsClientControlled)
         {
+            Destroy(XIndicator.gameObject);
             return;
         }
 
@@ -118,8 +120,8 @@ public class PlayerController : MonoBehaviour
                 StationaryUnplayableTime += Time.deltaTime;
                 if(StationaryUnplayableTime >= 6f)
                 {
-                    ResetVelocityAndPosition();
-                    ResetPosition(gameObject, LastPositionRTS);
+                    ForceRigidbodyReset();
+                    TeleportBallTo(LastPositionRTS);
                 }
             }
 
@@ -146,11 +148,12 @@ public class PlayerController : MonoBehaviour
         print(col.gameObject.tag);
         if (col.gameObject.tag == "Hole")
         {
-            ResetVelocityAndPosition();
+            ForceRigidbodyReset();
             //game.RpcNextHole();
         }
     }
 
+    [System.Obsolete]
     public void ResetPosition(GameObject player, Vector3 LRTS)
     {
         player.transform.localPosition = LRTS;
@@ -237,8 +240,8 @@ public class PlayerController : MonoBehaviour
         {
             if(GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
             {
-                ResetVelocityAndPosition();
-                ResetPosition(gameObject, LastPositionRTS);
+                ForceRigidbodyReset();
+                TeleportBallTo(LastPositionRTS);
             }
         }
         else if (Tag == "Untagged")
@@ -252,8 +255,8 @@ public class PlayerController : MonoBehaviour
         {
             if (GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
             {
-                ResetVelocityAndPosition();
-                ResetPosition(gameObject, LastPositionRTS);
+                ForceRigidbodyReset();
+                TeleportBallTo(LastPositionRTS);
             }
         }
     }
@@ -264,20 +267,21 @@ public class PlayerController : MonoBehaviour
         {
             if (GetComponent<Rigidbody>().velocity.magnitude < 2)
             {
-                ResetVelocityAndPosition();
-                ResetPosition(gameObject, LastPositionRTS);
+                ForceRigidbodyReset();
+                TeleportBallTo(LastPositionRTS);
             }
         }
         if (col.collider.gameObject.layer == 8) //reset layer
         {
             if (GetComponent<Rigidbody>().velocity.magnitude < 2)
             {
-                ResetVelocityAndPosition();
-                ResetPosition(gameObject, LastPositionRTS);
+                ForceRigidbodyReset();
+                TeleportBallTo(LastPositionRTS);
             }
         }
     }
 
+    [System.Obsolete]
     void ResetVelocityAndPosition()
     {
         transform.localPosition = Vector3.zero;
@@ -306,5 +310,31 @@ public class PlayerController : MonoBehaviour
     {
         Debug.DrawRay(transform.position, -Vector3.up * 0.1f, Color.red, 10f);
         return Physics.Raycast(new Ray(transform.position, -Vector3.up), out hit, 0.1f);
+    }
+
+    /// <summary>
+    /// Handles teleporting the ball to a location. If the game is networked, it will bypass NetworkSync.LerpPosition() and immedietly move the ball.
+    /// </summary>
+    /// <param name="pos">The position to teleport the ball's local position to.</param>
+    public void TeleportBallTo(Vector3 pos)
+    {
+        gameObject.transform.localPosition = pos;
+        if(Master.lobby.Networked)
+        {
+            Master.sync.CmdTellServerTeleported(Master.sync.Root.transform.position, transform.localPosition, transform.rotation);
+        }
+    }
+
+    /// <summary>
+    /// Resets the balls rigidybody velocity and rotation to 0. If the game is networked, it will tell the server immedietly.
+    /// </summary>
+    public void ForceRigidbodyReset()
+    {
+        GetComponent<Rigidbody>().velocity = Vector3.zero;
+        GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        if (Master.lobby.Networked)
+        {
+            Master.sync.CmdTellServerTeleported(Master.sync.Root.transform.position, transform.localPosition, transform.rotation);
+        }
     }
 }
