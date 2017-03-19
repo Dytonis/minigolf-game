@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 public class UIScoreboardLine : MonoBehaviour
 {
+    public int PlayerIDAssigned;
     public List<Text> Scores = new List<Text>();
     public List<int> ScoresRaw = new List<int>();
     public Text Tot;

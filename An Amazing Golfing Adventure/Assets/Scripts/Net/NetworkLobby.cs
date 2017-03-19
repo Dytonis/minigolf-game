@@ -108,7 +108,7 @@ public class NetworkLobby : NetworkManager
     {
         GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
         PlayerList = players.Select(x => x.GetComponent<LobbyPlayer>()).ToList();
-        //FixPlayerMetadataToObjects();
+        FixPlayerMetadataToObjects();
     }
 
     public void FixPlayerMetadataToObjects()

@@ -31,7 +31,16 @@ public class GameServer : NetworkBehaviour
 
         if(change >= lobby.PlayerList.Count)
         {
-            //lobby.LocalPlayer.GetComponent<PlayerControllerNetwork>().TriggerNextHole();            
+            if(lobby.LocalPlayer.isServer)
+                lobby.LocalPlayer.CmdHoleFinishedAllReady();      
+        }
+        else
+        {
+            foreach(LobbyPlayer p in lobby.PlayerList)
+            {
+                //runs on client only!
+                p.WaitingForOthers();
+            }
         }
     }
 

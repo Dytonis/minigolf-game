@@ -7,12 +7,31 @@ public class PlayerController : MonoBehaviour
     public LobbyPlayer Master;
     public bool IsClientControlled = true;
 
+    public UIScoreboard Scorecard;
+    public bool ForceShowingScorecard;
+    private bool _halt;
+    public bool HaltBackupResetForEvent
+    {
+        get
+        {
+            return _halt;
+        }
+        set
+        {
+            StationaryUnplayableTime = 0;
+
+            _halt = value;
+        }
+    }
+
     public GameObject PowerIndicator;
     public GameObject XIndicator;
     public CameraOrbit Orbiter;
     public float PowerLimit;
     public float SpeedSoundLimit;
     public float SpeedSoundDropLimit;
+
+    public int strokes;
 
     public float Power;
 
@@ -31,11 +50,9 @@ public class PlayerController : MonoBehaviour
     public AudioSource BounceLog;
     public AudioSource BounceWood;
 
-    public Game game;
-
-    void Start()
+    void Awake()
     {
-
+        Scorecard = GameObject.FindGameObjectWithTag("UIScoreboard").GetComponent<UIScoreboard>();
     }
    
     void Update()
@@ -44,6 +61,18 @@ public class PlayerController : MonoBehaviour
         {
             Destroy(XIndicator.gameObject);
             return;
+        }
+
+        if (!ForceShowingScorecard)
+        {
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                Scorecard.Toggle.SetActive(true);
+            }
+            if (Input.GetKeyUp(KeyCode.Tab))
+            {
+                Scorecard.Toggle.SetActive(false);
+            }
         }
 
         AirTimeLastFrame = AirTime;
@@ -118,10 +147,10 @@ public class PlayerController : MonoBehaviour
             if(IsStationary())
             {
                 StationaryUnplayableTime += Time.deltaTime;
-                if(StationaryUnplayableTime >= 6f)
+                if(StationaryUnplayableTime >= 6f && !HaltBackupResetForEvent)
                 {
                     ForceRigidbodyReset();
-                    TeleportBallTo(LastPositionRTS);
+                    TeleportBallLocalsTo(LastPositionRTS);
                 }
             }
 
@@ -135,6 +164,7 @@ public class PlayerController : MonoBehaviour
                 GetComponent<Rigidbody>().AddForce(XIndicator.transform.forward * Mathf.Pow(3.6f * Power, 0.88f) * 10);
                 Power = 0;
                 PowerIndicator.SetActive(false);
+                strokes++;
             }
         }
 
@@ -149,8 +179,20 @@ public class PlayerController : MonoBehaviour
         if (col.gameObject.tag == "Hole")
         {
             ForceRigidbodyReset();
-            //game.RpcNextHole();
+            Master.LocalClientFinishedHole();     
         }
+    }
+
+    public void ShowScorecardForce()
+    {
+        ForceShowingScorecard = true;
+        Scorecard.Toggle.SetActive(true);
+    }
+
+    public void HideScorecard()
+    {
+        ForceShowingScorecard = false;
+        Scorecard.Toggle.SetActive(false);
     }
 
     [System.Obsolete]
@@ -241,7 +283,7 @@ public class PlayerController : MonoBehaviour
             if(GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
             {
                 ForceRigidbodyReset();
-                TeleportBallTo(LastPositionRTS);
+                TeleportBallLocalsTo(LastPositionRTS);
             }
         }
         else if (Tag == "Untagged")
@@ -256,7 +298,7 @@ public class PlayerController : MonoBehaviour
             if (GetComponent<Rigidbody>().velocity.magnitude < 0.5f)
             {
                 ForceRigidbodyReset();
-                TeleportBallTo(LastPositionRTS);
+                TeleportBallLocalsTo(LastPositionRTS);
             }
         }
     }
@@ -268,7 +310,7 @@ public class PlayerController : MonoBehaviour
             if (GetComponent<Rigidbody>().velocity.magnitude < 2)
             {
                 ForceRigidbodyReset();
-                TeleportBallTo(LastPositionRTS);
+                TeleportBallLocalsTo(LastPositionRTS);
             }
         }
         if (col.collider.gameObject.layer == 8) //reset layer
@@ -276,7 +318,7 @@ public class PlayerController : MonoBehaviour
             if (GetComponent<Rigidbody>().velocity.magnitude < 2)
             {
                 ForceRigidbodyReset();
-                TeleportBallTo(LastPositionRTS);
+                TeleportBallLocalsTo(LastPositionRTS);
             }
         }
     }
@@ -313,10 +355,21 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
+    /// Moves the ball to the next hole. If the game is networked, it will bypass NetworkSync.LerpPosition() and immedietly move the ball.
+    /// </summary>
+    /// <param name="holeNum">The index of the hole to move to in the hole list on GameServer.</param>
+    public void MoveBallToHole(int holeNum)
+    {
+        TeleportBallLocalsTo(Vector3.zero);
+        ForceRigidbodyReset();
+        Master.sync.Root.transform.position = Master.game.HoleSpawns[holeNum].transform.position;
+    }
+
+    /// <summary>
     /// Handles teleporting the ball to a location. If the game is networked, it will bypass NetworkSync.LerpPosition() and immedietly move the ball.
     /// </summary>
     /// <param name="pos">The position to teleport the ball's local position to.</param>
-    public void TeleportBallTo(Vector3 pos)
+    public void TeleportBallLocalsTo(Vector3 pos)
     {
         gameObject.transform.localPosition = pos;
         if(Master.lobby.Networked)
@@ -334,7 +387,7 @@ public class PlayerController : MonoBehaviour
         GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
         if (Master.lobby.Networked)
         {
-            Master.sync.CmdTellServerTeleported(Master.sync.Root.transform.position, transform.localPosition, transform.rotation);
+            Master.sync.CmdTellServerRigidbody(Vector3.zero, Vector3.zero);
         }
     }
 }

@@ -79,7 +79,6 @@ public class NetworkSync : NetworkBehaviour
             time = 0;
             if (Ball.gameObject.GetComponent<PlayerController>().IsClientControlled)
             {
-                print("attempting to update server pos");
                 CmdTellServerRigidbody(Ball.velocity, Ball.angularVelocity);
                 CmdTellServerPositions(Root.transform.position, Ball.transform.localPosition, Ball.transform.rotation);
             }

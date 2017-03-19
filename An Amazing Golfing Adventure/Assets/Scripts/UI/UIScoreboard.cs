@@ -21,18 +21,19 @@ public class UIScoreboard : MonoBehaviour
 
     public List<UIScoreboardLine> Lines = new List<UIScoreboardLine>();
 
-    public void Initialize(string[] PlayerNamesInit)
+    public void Initialize(JAMGG.Net.PlayerMetadata[] PlayerNamesInit)
     {
         anchoredTop = TopObject.anchoredPosition;
         anchoredBot = BottomObject.anchoredPosition;
 
         int index = 0;
-        foreach(string s in PlayerNamesInit)
+        foreach(JAMGG.Net.PlayerMetadata m in PlayerNamesInit)
         {
-            print("creating line " + s);
+            print("creating line " + m.name);
             GameObject line = Instantiate(LinePrefab) as GameObject;
             Lines.Add(line.GetComponent<UIScoreboardLine>());
-            line.GetComponent<UIScoreboardLine>().Name.text = s;
+            line.GetComponent<UIScoreboardLine>().Name.text = m.name;
+            line.GetComponent<UIScoreboardLine>().PlayerIDAssigned = m.ID;
             line.transform.SetParent(Toggle.transform);
             line.transform.SetAsFirstSibling();
 
@@ -63,7 +64,7 @@ public class UIScoreboard : MonoBehaviour
     /// Handles the deletion and recreation of the scoreboard lines.
     /// </summary>
     /// <param name="PlayerNamesInit"></param>
-    public void UpdatePlayers(string[] PlayerNamesInit)
+    public void UpdatePlayers(JAMGG.Net.PlayerMetadata[] PlayerNamesInit)
     {
         //loop through lines, deleting objects
         for(int i = 0; i < Lines.Count; i++)
@@ -79,11 +80,27 @@ public class UIScoreboard : MonoBehaviour
         Initialize(PlayerNamesInit);
     }
 
-    public void ApplyScores(int hole, int player, int score)
+    public void ApplyScores(int hole, int playerID, int score)
     {
-        Lines[player].Scores[hole].text = score.ToString();
-        Lines[player].ScoresRaw[hole] = score;
-        Lines[player].Tot.text = Lines[player].ScoresRaw.Sum().ToString();
+        int playerIndex = -1;
+
+        int index = 0;
+        foreach(int m in Lines.Select(x => x.PlayerIDAssigned))
+        {
+            if (m == playerID)
+                playerIndex = index;
+
+            index++;
+        }
+
+        if (playerIndex == -1)
+            throw new System.Exception("Unable to find playerID " + playerID + " in list.");
+
+        Debug.Log("Found object in list [" + playerIndex + "] ID " + playerID);
+
+        Lines[playerIndex].ScoresRaw[hole] = score;
+        Lines[playerIndex].Scores[hole].text = score.ToString();
+        Lines[playerIndex].Tot.text = Lines[playerIndex].ScoresRaw.Sum().ToString();
     }
 
 	// Use this for initialization

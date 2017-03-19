@@ -8,6 +8,7 @@ using System.Collections;
 
 public class LobbyPlayer : NetworkBehaviour
 {
+    public GameServer game;
     public NetworkLobby lobby;
     public NetworkSync sync;
     [SerializeField, SyncVar]
@@ -43,6 +44,7 @@ public class LobbyPlayer : NetworkBehaviour
             p.ControlledBall = (Instantiate(lobby.BallPlayerPrefab) as GameObject).GetComponent<PlayerRoot>().ball;
             p.GetComponent<NetworkSync>().SetupSync(p.ControlledBall.GetComponent<Rigidbody>(), p.ControlledBall.transform.parent.GetComponent<PlayerRoot>());
             p.ControlledBall.Master = p;
+            p.game = GameObject.FindGameObjectWithTag("GameController").GetComponent<GameServer>();
         }
 
         ControlledBall.IsClientControlled = true;
@@ -58,6 +60,21 @@ public class LobbyPlayer : NetworkBehaviour
         print(cam + " from " + meta.name);
         cam.SetActive(false);
         CmdPlayerSetReady(true);
+    }
+
+    IEnumerator WaitToChangeHole(int hole)
+    {
+        ControlledBall.HaltBackupResetForEvent = true;
+
+        yield return new WaitForSeconds(1f);
+
+        ControlledBall.ShowScorecardForce();
+
+        yield return new WaitForSeconds(6f);
+
+        ControlledBall.HideScorecard();
+        ControlledBall.MoveBallToHole(hole);
+        ControlledBall.HaltBackupResetForEvent = false;
     }
 
     public override void OnStartLocalPlayer()
@@ -146,7 +163,20 @@ public class LobbyPlayer : NetworkBehaviour
                 return;
         }
 
+        game.HoleNumber = 1;
         RpcOfficialGameStartedInit();
+    }
+
+    [Command]
+    public void CmdSetClientFinishedHole(int playerID, int strokes)
+    {
+        RpcGotOtherPlayerFinishedHole(playerID, game.HoleNumber-1, strokes);
+    }
+
+    [Command]
+    public void CmdFinishedHole()
+    {
+        game.FinishedPlayersPerHole++;
     }
 
     [ClientRpc, System.Obsolete]
@@ -199,6 +229,13 @@ public class LobbyPlayer : NetworkBehaviour
                 lobby.LocalPlayer.spawnMultiplayerBallQueue++;
             }
         }
+
+        lobby.GeneratePlayerList();
+
+        if (ControlledBall != null)
+        {
+            ControlledBall.Scorecard.UpdatePlayers(lobby.PlayerList.Select(x => x.meta).ToArray());
+        }
     }
 
     [ClientRpc]
@@ -209,6 +246,9 @@ public class LobbyPlayer : NetworkBehaviour
         print("CLIENT + " + meta.name + " Recieve Command: RpcNextHole");
         print(lobby.gameManager);
 
+        lobby.GeneratePlayerList();
+        ControlledBall.Scorecard.Initialize(lobby.PlayerList.Select(x => x.meta).ToArray());
+
         lobby.gameManager.FinishedPlayersPerHole = 0;
         foreach (LobbyPlayer p in lobby.PlayerList)
         {
@@ -216,10 +256,56 @@ public class LobbyPlayer : NetworkBehaviour
             //move all objects for client
             p.ControlledBall.transform.parent.position = lobby.gameManager.HoleSpawns[1].transform.position;
 
-
             p.ControlledBall.transform.localPosition = Vector3.zero;
             p.ControlledBall.GetComponent<Rigidbody>().velocity = Vector3.zero;
             p.ControlledBall.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        }
+    }
+
+    [ClientRpc]
+    public void RpcGotChangeHole(int hole)
+    {
+        StartCoroutine(WaitToChangeHole(hole));
+    }
+
+    [ClientRpc]
+    public void RpcGotOtherPlayerFinishedHole(int playerID, int hole, int strokes)
+    {
+        //ran on the finished ball. we need to run this on the local player.
+
+        lobby.LocalPlayer.ControlledBall.Scorecard.ApplyScores(hole, playerID, strokes);
+    }
+
+    [Command]
+    public void CmdHoleFinishedAllReady()
+    {
+        //ran on the host's ball
+        
+        print("hole finished all ready");
+
+        print("hole finished all ready success");
+
+        game.HoleNumber++;
+
+        foreach(LobbyPlayer p in lobby.PlayerList) //run the rpc on all balls
+            p.RpcGotChangeHole(game.HoleNumber);
+    }
+
+    public void WaitingForOthers()
+    {
+        if (isLocalPlayer)
+        {
+            ControlledBall.HaltBackupResetForEvent = true;
+        }
+    }
+
+    public void LocalClientFinishedHole()
+    {
+        if (isLocalPlayer)
+        {
+            CmdSetClientFinishedHole(meta.ID, ControlledBall.strokes);
+            ControlledBall.strokes = 0;
+            CmdFinishedHole();
         }
     }
 }
