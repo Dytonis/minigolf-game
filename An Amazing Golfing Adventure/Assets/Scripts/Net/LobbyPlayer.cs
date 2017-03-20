@@ -75,6 +75,7 @@ public class LobbyPlayer : NetworkBehaviour
         ControlledBall.HideScorecard();
         ControlledBall.MoveBallToHole(hole);
         ControlledBall.HaltBackupResetForEvent = false;
+        game.ResetFinishedCounter();
     }
 
     public override void OnStartLocalPlayer()
@@ -283,11 +284,9 @@ public class LobbyPlayer : NetworkBehaviour
         
         print("hole finished all ready");
 
-        print("hole finished all ready success");
-
         game.HoleNumber++;
 
-        foreach(LobbyPlayer p in lobby.PlayerList) //run the rpc on all balls
+        foreach (LobbyPlayer p in lobby.PlayerList) //run the rpc on all balls
             p.RpcGotChangeHole(game.HoleNumber);
     }
 

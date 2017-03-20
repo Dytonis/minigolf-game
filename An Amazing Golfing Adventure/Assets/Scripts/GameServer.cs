@@ -44,6 +44,11 @@ public class GameServer : NetworkBehaviour
         }
     }
 
+    public void ResetFinishedCounter()
+    {
+        FinishedPlayersPerHole = 0;
+    } 
+
     public void Starta()
     {
         for(int i = 0; i < HoleCount; i++)
