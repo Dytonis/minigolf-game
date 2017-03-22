@@ -20,6 +20,8 @@ public class NetworkLobby : NetworkManager
     public List<LobbyPlayer> PlayerList = new List<LobbyPlayer>();
 
     public LobbyPlayer LocalPlayer;
+    public JAMGG.Enums.MapInfo SelectedMapInfo;
+    public int MapCount = 1;
 
     [HideInInspector]
     public UIScreens Screens;
@@ -27,6 +29,32 @@ public class NetworkLobby : NetworkManager
     public bool Networked = true;
 
     public GameServer gameManager;
+
+    public void ChangeMapSelectedInt(int change)
+    {
+        if (change > 0)
+        {
+            if ((int)SelectedMapInfo.MapRegistrar >= MapCount - 1)
+            {
+                SelectedMapInfo = ResourceManagement.InfoForRegistrar(0);
+            }
+            else
+            {
+                SelectedMapInfo = ResourceManagement.InfoForRegistrar(SelectedMapInfo.MapRegistrar + 1);
+            }
+        }
+        else if (change < 0)
+        {
+            if ((int)SelectedMapInfo.MapRegistrar <= 0)
+            {
+                SelectedMapInfo = ResourceManagement.InfoForRegistrar((JAMGG.Enums.RegisteredMaps)(MapCount - 1));
+            }
+            else
+            {
+                SelectedMapInfo = ResourceManagement.InfoForRegistrar(SelectedMapInfo.MapRegistrar - 1);
+            }
+        }
+    }
 
     public void NLChangeLevel(string level)
     {

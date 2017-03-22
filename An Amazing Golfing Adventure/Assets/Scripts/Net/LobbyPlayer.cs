@@ -84,6 +84,9 @@ public class LobbyPlayer : NetworkBehaviour
 
         lobby.LocalPlayer = this;
 
+        if (isServer)
+            lobby.SelectedMapInfo = ResourceMapInfo.Glen;
+
         isPlayer = true;
 
         CmdPlayerJoined(meta);
@@ -119,7 +122,7 @@ public class LobbyPlayer : NetworkBehaviour
         if(isServer)
         {
             //NetworkServer.SetAllClientsNotReady();
-            lobby.NLChangeLevel("LoadingGlen");
+            lobby.NLChangeLevel(lobby.SelectedMapInfo.LoadingScene);
         }
         else
         {
@@ -139,8 +142,8 @@ public class LobbyPlayer : NetworkBehaviour
             OtherMetadatas = lobby.PlayerList.Select(x => x.meta).ToArray(),
             LobbyInfo = new LobbyUpdateGeneralPacket
             {
-                LobbyName = lobby.LocalPlayer.meta.name + "\'s Game",
-                MapSelected = "NOT IMPLEMENTED"
+                LobbyName = lobby.matchName,
+                MapInfo = lobby.SelectedMapInfo
             }
         };
 
@@ -180,6 +183,25 @@ public class LobbyPlayer : NetworkBehaviour
         game.FinishedPlayersPerHole++;
     }
 
+    [Command]
+    public void CmdHoleFinishedAllReady()
+    {
+        //ran on the host's ball
+
+        print("hole finished all ready");
+
+        game.HoleNumber++;
+
+        foreach (LobbyPlayer p in lobby.PlayerList) //run the rpc on all balls
+            p.RpcGotChangeHole(game.HoleNumber);
+    }
+
+    [Command]
+    public void CmdUpdateLobbySettings(JAMGG.Net.LobbyUpdateGeneralPacket packet)
+    {
+        RpcGetLobbyUpdate(packet);
+    }
+
     [ClientRpc, System.Obsolete]
     public void RpcChangeLevel()
     {
@@ -197,7 +219,7 @@ public class LobbyPlayer : NetworkBehaviour
         if (!lobby.Networked) //return if singleplayer
             return;
 
-        if (!isLocalPlayer)
+        if (!isClient)
         {
             //IF A DIFFERENT CLIENT CONNECTS
 
@@ -216,8 +238,16 @@ public class LobbyPlayer : NetworkBehaviour
             //you are connecting
             print("connecting with name " + connect.name);
 
+            lobby.Screens.MapName.text = lobbyInfo.LobbyInfo.MapInfo.UIName.ToString();
             lobby.Screens.Lobbyname.text = lobbyInfo.LobbyInfo.LobbyName;
-            lobby.Screens.MapName.text = lobbyInfo.LobbyInfo.MapSelected;
+            lobby.SelectedMapInfo = lobbyInfo.LobbyInfo.MapInfo;
+            lobby.Screens.Par.text = lobbyInfo.LobbyInfo.MapInfo.Par.ToString();
+            lobby.Screens.Length.text = lobbyInfo.LobbyInfo.MapInfo.MapRegisteredLength.ToString();
+            lobby.Screens.Difficulty.text = lobbyInfo.LobbyInfo.MapInfo.MapRegisteredDifficulty.ToString();
+            lobby.Screens.Holes.text = lobbyInfo.LobbyInfo.MapInfo.HoleCount.ToString();
+
+            lobby.Screens.LobbyMapThumb.texture = Resources.Load(ResourceManagement.GetImageThumbForEnum(lobbyInfo.LobbyInfo.MapInfo.MapRegistrar)) as Texture;
+
             lobby.Screens.Playernames.text = "";
 
             foreach (PlayerMetadata m in lobbyInfo.OtherMetadatas)
@@ -264,6 +294,22 @@ public class LobbyPlayer : NetworkBehaviour
     }
 
     [ClientRpc]
+    public void RpcGetLobbyUpdate(JAMGG.Net.LobbyUpdateGeneralPacket packet)
+    {
+        print("CLIENT GetLobbyUpdate");
+
+        lobby.Screens.MapName.text = packet.MapInfo.UIName.ToString();
+        lobby.Screens.Lobbyname.text = packet.LobbyName;
+        lobby.SelectedMapInfo = packet.MapInfo;
+        lobby.Screens.Par.text = packet.MapInfo.Par.ToString();
+        lobby.Screens.Length.text = packet.MapInfo.MapRegisteredLength.ToString();
+        lobby.Screens.Difficulty.text = packet.MapInfo.MapRegisteredDifficulty.ToString();
+        lobby.Screens.Holes.text = packet.MapInfo.HoleCount.ToString();
+
+        lobby.Screens.LobbyMapThumb.texture = Resources.Load(ResourceManagement.GetImageThumbForEnum(packet.MapInfo.MapRegistrar)) as Texture;
+    }
+
+    [ClientRpc]
     public void RpcGotChangeHole(int hole)
     {
         StartCoroutine(WaitToChangeHole(hole));
@@ -275,19 +321,6 @@ public class LobbyPlayer : NetworkBehaviour
         //ran on the finished ball. we need to run this on the local player.
 
         lobby.LocalPlayer.ControlledBall.Scorecard.ApplyScores(hole, playerID, strokes);
-    }
-
-    [Command]
-    public void CmdHoleFinishedAllReady()
-    {
-        //ran on the host's ball
-        
-        print("hole finished all ready");
-
-        game.HoleNumber++;
-
-        foreach (LobbyPlayer p in lobby.PlayerList) //run the rpc on all balls
-            p.RpcGotChangeHole(game.HoleNumber);
     }
 
     public void WaitingForOthers()
@@ -305,6 +338,23 @@ public class LobbyPlayer : NetworkBehaviour
             CmdSetClientFinishedHole(meta.ID, ControlledBall.strokes);
             ControlledBall.strokes = 0;
             CmdFinishedHole();
+        }
+    }
+
+    public void GotRequestChangeMap(int change)
+    {
+        if(isServer)
+        {
+            lobby.ChangeMapSelectedInt(change);
+            CmdUpdateLobbySettings(new LobbyUpdateGeneralPacket
+            {
+                LobbyName = lobby.matchName,
+                MapInfo = lobby.SelectedMapInfo
+            });
+        }
+        else
+        {
+            print("You can't change the map as a client!");
         }
     }
 }

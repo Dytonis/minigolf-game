@@ -9,10 +9,12 @@ public class UIButtonMainMenu : MonoBehaviour
 
     RectTransform rect;
     Text text;
+    RawImage image;
     Vector3 originalPosition;
     public Vector3 offset;
     public float Speed;
 
+    public bool isText = true;
     public bool AnimateMovement = true;
     public bool AnimateColor = true;
 
@@ -25,6 +27,7 @@ public class UIButtonMainMenu : MonoBehaviour
     {
         rect = GetComponent<RectTransform>();
         text = GetComponent<Text>();
+        image = GetComponent<RawImage>();
         originalPosition = rect.anchoredPosition;
 
         ScreensManager = transform.parent.parent.GetComponent<UIScreens>();
@@ -49,7 +52,11 @@ public class UIButtonMainMenu : MonoBehaviour
     {
         StopAllCoroutines();
         rect.anchoredPosition = originalPosition;
-        text.color = Color.white;
+
+        if (isText)
+            text.color = Color.white;
+        else
+            image.color = Color.white;
     }
 
     public void Click()
@@ -97,6 +104,14 @@ public class UIButtonMainMenu : MonoBehaviour
         {
             ScreensManager.Lobby.LocalPlayer.HandleLevelChange();
         }
+        else if (button == Buttons.MapButtonLeft)
+        {
+            ScreensManager.Lobby.LocalPlayer.GotRequestChangeMap(-1);
+        }
+        else if (button == Buttons.MapButtonRight)
+        {
+            ScreensManager.Lobby.LocalPlayer.GotRequestChangeMap(1);
+        }
     }
 
     IEnumerator SmoothMove(Vector3 startpos, Vector3 endpos, float seconds)
@@ -115,7 +130,12 @@ public class UIButtonMainMenu : MonoBehaviour
         while (t <= 1.0)
         {
             t += Time.deltaTime / seconds;
-            text.color = Color.Lerp(start, end, Mathf.SmoothStep(0.0f, 1.0f, t));
+
+            if(isText)
+                text.color = Color.Lerp(start, end, Mathf.SmoothStep(0.0f, 1.0f, t));
+            else
+                image.color = Color.Lerp(start, end, Mathf.SmoothStep(0.0f, 1.0f, t));
+
             yield return null;
         }
     }

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using JAMGG.Enums;
 
 namespace JAMGG.Net
 {
@@ -19,7 +17,7 @@ namespace JAMGG.Net
     public struct LobbyUpdateGeneralPacket
     {
         public string LobbyName;
-        public string MapSelected;
+        public MapInfo MapInfo;
     }
 
     [Serializable]

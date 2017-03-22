@@ -10,6 +10,9 @@ public class UIScreens : MonoBehaviour
     public Text MapName;
     public Text Lobbyname;
     public Text Playernames;
+    public Text Par, Length, Difficulty, Holes;
+
+    public RawImage LobbyMapThumb;
 
     public void SwitchScreen(int ScreenNumber)
     {
