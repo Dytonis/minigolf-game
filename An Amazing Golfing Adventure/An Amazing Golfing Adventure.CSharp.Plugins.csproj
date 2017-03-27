@@ -161,6 +161,7 @@
     <None Include="Assets\AQUAS\Shaders\Water\Mobile\OneColored.shader" />
     <None Include="Assets\AQUAS\Shaders\Water\Mobile\OneColoredOpaque.shader" />
     <None Include="Assets\Material\Outlined-Silhouette Only.shader" />
+    <None Include="Assets\Models\Building\Campfire\License.txt" />
     <None Include="Assets\NatureStarterKit2\info.txt" />
     <None Include="Assets\Standard Assets\Characters\FirstPersonCharacter\FirstPersonCharacterGuidelines.txt" />
     <None Include="Assets\Standard Assets\Characters\RollerBall\RollerBallGuidelines.txt" />

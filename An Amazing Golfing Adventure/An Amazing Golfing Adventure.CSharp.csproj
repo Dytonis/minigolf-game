@@ -13,13 +13,11 @@
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>Unity Subset v3.5</TargetFrameworkProfile>
-    <CompilerResponseFile>
-    </CompilerResponseFile>
+    <CompilerResponseFile></CompilerResponseFile>
     <UnityProjectType>Game:1</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows:5</UnityBuildTarget>
     <UnityVersion>5.4.1f1</UnityVersion>
-    <RootNamespace>
-    </RootNamespace>
+    <RootNamespace></RootNamespace>
     <LangVersion Condition=" '$(VisualStudioVersion)' != '10.0' ">4</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -83,6 +81,7 @@
     <Compile Include="Assets\AQUAS\Scripts\AQUAS_RenderQueueEditor.cs" />
     <Compile Include="Assets\AQUAS\Scripts\AQUAS_Screenshotter.cs" />
     <Compile Include="Assets\AQUAS\Scripts\AQUAS_SmallBubbleBehaviour.cs" />
+    <Compile Include="Assets\Models\Building\Campfire\Script\FireLightScript.cs" />
     <Compile Include="Assets\Options.cs" />
     <Compile Include="Assets\Scene\Glen\GlenLoader.cs" />
     <Compile Include="Assets\Scripts\Camera\CameraAdmin.cs" />
@@ -90,9 +89,9 @@
     <Compile Include="Assets\Scripts\Camera\CameraSwivelSSO.cs" />
     <Compile Include="Assets\Scripts\DontGoThroughThings.cs" />
     <Compile Include="Assets\Scripts\Game.cs" />
-    <Compile Include="Assets\Scripts\GameServer.cs" />
     <Compile Include="Assets\Scripts\Game\Enums.cs" />
     <Compile Include="Assets\Scripts\Game\ResourceManagement.cs" />
+    <Compile Include="Assets\Scripts\GameServer.cs" />
     <Compile Include="Assets\Scripts\Mechanic\Pusher.cs" />
     <Compile Include="Assets\Scripts\Net\LobbyPlayer.cs" />
     <Compile Include="Assets\Scripts\Net\NetworkLobby.cs" />
@@ -132,6 +131,7 @@
     <None Include="Assets\AQUAS\Shaders\Water\Mobile\OneColored.shader" />
     <None Include="Assets\AQUAS\Shaders\Water\Mobile\OneColoredOpaque.shader" />
     <None Include="Assets\Material\Outlined-Silhouette Only.shader" />
+    <None Include="Assets\Models\Building\Campfire\License.txt" />
     <None Include="Assets\NatureStarterKit2\info.txt" />
     <None Include="Assets\Standard Assets\Characters\FirstPersonCharacter\FirstPersonCharacterGuidelines.txt" />
     <None Include="Assets\Standard Assets\Characters\RollerBall\RollerBallGuidelines.txt" />
