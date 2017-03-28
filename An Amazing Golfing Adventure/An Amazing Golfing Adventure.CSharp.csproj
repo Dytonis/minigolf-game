@@ -93,6 +93,7 @@
     <Compile Include="Assets\Scripts\Game\ResourceManagement.cs" />
     <Compile Include="Assets\Scripts\GameServer.cs" />
     <Compile Include="Assets\Scripts\Mechanic\Pusher.cs" />
+    <Compile Include="Assets\Scripts\Mechanic\Rotator.cs" />
     <Compile Include="Assets\Scripts\Net\LobbyPlayer.cs" />
     <Compile Include="Assets\Scripts\Net\NetworkLobby.cs" />
     <Compile Include="Assets\Scripts\Net\NetworkPackets.cs" />
