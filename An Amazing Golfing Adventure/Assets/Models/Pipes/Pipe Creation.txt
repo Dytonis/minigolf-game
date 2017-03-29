@@ -1,0 +1,15 @@
+Path
+
+Path FULL
+
+Path Depth: 0.154
+Resolution: 16
+
+Alt-C Convert To Mesh
+
+SOLIDIFY
+
+Thickness: 0.0075
+
+Shift-S Cursor To Center
+Ctrl-Shift-Alt C Origin To Cursor
