@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 // Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
 #ifndef UNITY_STANDARD_CORE_FORWARD_SIMPLE_INCLUDED
@@ -81,7 +83,7 @@ VertexOutputBaseSimple vertForwardBaseSimple (VertexInput v)
 
 	float4 posWorld = mul(unity_ObjectToWorld, v.vertex);
 	o.posWorld = posWorld.xyz;
-	o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+	o.pos = UnityObjectToClipPos(v.vertex);
 	o.tex = TexCoordsWorld(v);
 	
 	half3 eyeVec = normalize(posWorld.xyz - _WorldSpaceCameraPos);
@@ -250,7 +252,7 @@ VertexOutputForwardAddSimple vertForwardAddSimple (VertexInput v)
 
 	float4 posWorld = mul(unity_ObjectToWorld, v.vertex);
 	o.posWorld = posWorld;
-	o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+	o.pos = UnityObjectToClipPos(v.vertex);
 	o.tex = TexCoordsWorld(v);
 
 	//We need this for shadow receiving

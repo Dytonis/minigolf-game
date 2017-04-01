@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 Shader "AQUAS/Camera Effects/Under Water" {
     Properties {
         _DistortionTexture ("Distortion Texture", 2D) = "bump" {}
@@ -46,7 +48,7 @@ Shader "AQUAS/Camera Effects/Under Water" {
             VertexOutput vert (VertexInput v) {
                 VertexOutput o = (VertexOutput)0;
                 o.uv0 = v.texcoord0;
-                o.pos = mul(UNITY_MATRIX_MVP, v.vertex );
+                o.pos = UnityObjectToClipPos(v.vertex );
                 UNITY_TRANSFER_FOG(o,o.pos);
                 o.screenPos = o.pos;
                 return o;
